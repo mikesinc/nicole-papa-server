@@ -1,6 +1,6 @@
 const fs = require('fs');
 const readline = require('readline');
-const {google} = require('googleapis');
+const { google } = require('googleapis');
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
@@ -13,7 +13,7 @@ const TOKEN_PATH = 'token.json';
 fs.readFile('credentials.json', (err, content) => {
   if (err) return console.log('Error loading client secret file:', err);
   // Authorize a client with credentials, then call the Google Calendar API.
-  authorize(JSON.parse(content), listEvents);
+  authorize(JSON.parse(content), addEvent);
 });
 
 /**
@@ -23,9 +23,9 @@ fs.readFile('credentials.json', (err, content) => {
  * @param {function} callback The callback to call with the authorized client.
  */
 function authorize(credentials, callback) {
-  const {client_secret, client_id, redirect_uris} = credentials.installed;
+  const { client_secret, client_id, redirect_uris } = credentials.installed;
   const oAuth2Client = new google.auth.OAuth2(
-      client_id, client_secret, redirect_uris[0]);
+    client_id, client_secret, redirect_uris[0]);
 
   // Check if we have previously stored a token.
   fs.readFile(TOKEN_PATH, (err, token) => {
@@ -71,7 +71,7 @@ function getAccessToken(oAuth2Client, callback) {
  * @param {google.auth.OAuth2} auth An authorized OAuth2 client.
  */
 function listEvents(auth) {
-  const calendar = google.calendar({version: 'v3', auth});
+  const calendar = google.calendar({ version: 'v3', auth });
   calendar.events.list({
     calendarId: '2b0ajo6jvug90l1tspvunpiu8g@group.calendar.google.com',
     timeMin: (new Date()).toISOString(),
@@ -90,5 +90,38 @@ function listEvents(auth) {
     } else {
       console.log('No upcoming events found.');
     }
+  });
+}
+
+function addEvent(auth) {
+  const calendar = google.calendar({ version: 'v3', auth });
+  calendar.events.insert({
+    calendarId: '2b0ajo6jvug90l1tspvunpiu8g@group.calendar.google.com',
+    resource: {
+      summary: '50 min cons',
+      creator: {
+        email: 'test@gmail.com',
+        displayName: 'bob'
+      },
+      organizer: {
+        email: '2b0ajo6jvug90l1tspvunpiu8g@group.calendar.google.com',
+        displayName: 'booking test',
+        self: true
+      },
+      end:
+      {
+        dateTime: '2019-11-06T17:20:00+08:00',
+        timeZone: 'Australia/Perth'
+      },
+      start:
+      {
+        dateTime: '2019-11-06T16:30:00+08:00',
+        timeZone: 'Australia/Perth'
+      }
+    }
+  }, (err, res) => {
+    if (err) return console.log('The add event API returned an error: ' + err);
+    const result = res.data.items;
+    console.log(result);
   });
 }
