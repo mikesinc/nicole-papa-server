@@ -1,6 +1,17 @@
 const fs = require('fs');
 const readline = require('readline');
 const { google } = require('googleapis');
+const express = require('express');
+const cors = require('cors');
+
+if (process.env.NODE_ENV !== 'production') { require('dotenv').config() }
+
+const app = express();
+const eventList = [];
+
+//Middleware
+app.use(express.json());
+app.use(cors());
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
@@ -10,11 +21,11 @@ const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 const TOKEN_PATH = 'token.json';
 
 // Load client secrets from a local file.
-fs.readFile('credentials.json', (err, content) => {
-  if (err) return console.log('Error loading client secret file:', err);
-  // Authorize a client with credentials, then call the Google Calendar API.
-  authorize(JSON.parse(content), addEvent);
-});
+// fs.readFile('credentials.json', (err, content) => {
+//   if (err) return console.log('Error loading client secret file:', err);
+//   // Authorize a client with credentials, then call the Google Calendar API.
+//   authorize(JSON.parse(content), listEvents);
+// });
 
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
@@ -28,7 +39,7 @@ function authorize(credentials, callback) {
     client_id, client_secret, redirect_uris[0]);
 
   // Check if we have previously stored a token.
-  fs.readFile(TOKEN_PATH, (err, token) => {
+ fs.readFile(TOKEN_PATH, (err, token) => {
     if (err) return getAccessToken(oAuth2Client, callback);
     oAuth2Client.setCredentials(JSON.parse(token));
     callback(oAuth2Client);
@@ -54,11 +65,11 @@ function getAccessToken(oAuth2Client, callback) {
   rl.question('Enter the code from that page here: ', (code) => {
     rl.close();
     oAuth2Client.getToken(code, (err, token) => {
-      if (err) return console.error('Error retrieving access token', err);
+      if (err) res.status(403).send('Error retrieving access token', err);
       oAuth2Client.setCredentials(token);
       // Store the token to disk for later program executions
       fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
-        if (err) return console.error(err);
+        if (err) res.status(403).send(err);
         console.log('Token stored to', TOKEN_PATH);
       });
       callback(oAuth2Client);
@@ -79,13 +90,15 @@ function listEvents(auth) {
     singleEvents: true,
     orderBy: 'startTime',
   }, (err, res) => {
-    if (err) return console.log('The API returned an error: ' + err);
+    if (err) res.status(404).send('The API returned an error: ' + err);
+    // console.log(res.data.items);
     const events = res.data.items;
     if (events.length) {
       console.log('Upcoming 10 events:');
       events.map((event, i) => {
         const start = event.start.dateTime || event.start.date;
-        console.log(`${start} - ${event.summary}`);
+        eventList.push(`${start} - ${event.summary}`);
+        // console.log(`${start} - ${event.summary}`);
       });
     } else {
       console.log('No upcoming events found.');
@@ -125,3 +138,20 @@ function addEvent(auth) {
     console.log(result);
   });
 }
+
+app.get('/', (req, res) => res.send('Server up and running.'));
+app.get('/timeslots', (req, res) => {
+  fs.readFile(('credentials.json'), (err, content) => {
+    if (err) res.status(404).send('Error loading client secret file:', err);
+     // Authorize a client with credentials, then call the Google Calendar API.
+    //  res.send({ crocodiles: ['judy', 'nigel', 'spence'] });
+    authorize(JSON.parse(content), listEvents);
+    console.log(eventList);
+    res.send('done');
+    // res.send({ events: authorize(JSON.parse(content), listEvents) });
+  });
+});
+
+app.listen(process.env.PORT || 3001, () => {
+  console.log(`Server running on port ${process.env.PORT}.`);
+});
