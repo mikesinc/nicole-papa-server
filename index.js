@@ -7,7 +7,7 @@ const cors = require('cors');
 if (process.env.NODE_ENV !== 'production') { require('dotenv').config() }
 
 const app = express();
-const eventList = [];
+const eventInfo = [];
 
 //Middleware
 app.use(express.json());
@@ -19,13 +19,6 @@ const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 // created automatically when the authorization flow completes for the first
 // time.
 const TOKEN_PATH = 'token.json';
-
-// Load client secrets from a local file.
-// fs.readFile('credentials.json', (err, content) => {
-//   if (err) return console.log('Error loading client secret file:', err);
-//   // Authorize a client with credentials, then call the Google Calendar API.
-//   authorize(JSON.parse(content), listEvents);
-// });
 
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
@@ -91,23 +84,17 @@ function listEvents(auth) {
     orderBy: 'startTime',
   }, (err, res) => {
     if (err) res.status(404).send('The API returned an error: ' + err);
-    // console.log(res.data.items);
     const events = res.data.items;
-    if (events.length) {
-      console.log('Upcoming 10 events:');
-      events.map((event, i) => {
-        const start = event.start.dateTime || event.start.date;
-        eventList.push(`${start} - ${event.summary}`);
-        // console.log(`${start} - ${event.summary}`);
+      events.forEach(event => {
+        eventInfo.push({ description: event.summary, start: event.start, end: event.end });
       });
-    } else {
-      console.log('No upcoming events found.');
-    }
+    return events;
   });
 }
 
 function addEvent(auth) {
   const calendar = google.calendar({ version: 'v3', auth });
+  console.log(dummy);
   calendar.events.insert({
     calendarId: '2b0ajo6jvug90l1tspvunpiu8g@group.calendar.google.com',
     resource: {
@@ -123,19 +110,17 @@ function addEvent(auth) {
       },
       end:
       {
-        dateTime: '2019-11-06T17:20:00+08:00',
+        dateTime: '2020-01-11T17:20:00+08:00',
         timeZone: 'Australia/Perth'
       },
       start:
       {
-        dateTime: '2019-11-06T16:30:00+08:00',
+        dateTime: '2020-01-10T16:30:00+08:00',
         timeZone: 'Australia/Perth'
       }
     }
   }, (err, res) => {
     if (err) return console.log('The add event API returned an error: ' + err);
-    const result = res.data.items;
-    console.log(result);
   });
 }
 
@@ -145,10 +130,8 @@ app.get('/timeslots', (req, res) => {
     if (err) res.status(404).send('Error loading client secret file:', err);
      // Authorize a client with credentials, then call the Google Calendar API.
     //  res.send({ crocodiles: ['judy', 'nigel', 'spence'] });
-    authorize(JSON.parse(content), listEvents);
-    console.log(eventList);
-    res.send('done');
-    // res.send({ events: authorize(JSON.parse(content), listEvents) });
+    const events = authorize(JSON.parse(content), listEvents);
+    res.send(events);
   });
 });
 
