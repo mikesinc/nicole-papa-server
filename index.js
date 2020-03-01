@@ -93,6 +93,7 @@ app.post("/patch", (req, res) => {
 });
 
 app.get("/cancel", (req, res) => {
+  const { eventId } = req.body
   fs.readFile("credentials.json", (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     const { client_email, private_key } = JSON.parse(content);
@@ -103,12 +104,25 @@ app.get("/cancel", (req, res) => {
         calendarId: "2b0ajo6jvug90l1tspvunpiu8g@group.calendar.google.com",
         eventId: eventId,
         resource: {
-          summary: title
+          summary: "Open"
         }
       },
       (err) => {
         if (err) {
           res.send(JSON.stringify({ error: err }));
+        }
+      }
+    );
+    calendar.events.delete(
+      {
+        calendarId: "mas.sinclair@gmail.com",
+        eventId: eventId,
+      },
+      (err) => {
+        if (err) {
+          res.send(JSON.stringify({ error: err }));
+        } else {
+          res.send(JSON.stringify({ message: "Event deleted.", result }));
         }
       }
     );
