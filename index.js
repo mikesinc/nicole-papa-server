@@ -1,5 +1,4 @@
 const fs = require("fs");
-const readline = require("readline");
 const { google } = require("googleapis");
 const express = require("express");
 const cors = require("cors");
@@ -25,7 +24,7 @@ app.get("/", (req, res) => {
     const events = [];
     calendar.events.list(
       {
-        calendarId: "2b0ajo6jvug90l1tspvunpiu8g@group.calendar.google.com",
+        calendarId: process.env.BOOKING_CALENDAR_ID,
         timeMin: new Date().toISOString(),
         maxResults: 50,
         singleEvents: true,
@@ -64,13 +63,13 @@ app.post("/patch", (req, res) => {
     const calendar = google.calendar({ version: "v3", auth: jwt });
     calendar.events.patch(
       {
-        calendarId: "2b0ajo6jvug90l1tspvunpiu8g@group.calendar.google.com",
+        calendarId: process.env.BOOKING_CALENDAR_ID,
         eventId: eventId,
         resource: {
           summary: title
         }
       },
-      (err) => {
+      err => {
         if (err) {
           res.send(JSON.stringify({ error: err }));
         }
@@ -78,14 +77,16 @@ app.post("/patch", (req, res) => {
     );
     calendar.events.insert(
       {
-        calendarId: "mas.sinclair@gmail.com",
+        calendarId: process.env.MAIN_CALENDAR_ID,
         resource: resource
       },
       (err, result) => {
         if (err) {
           res.send(JSON.stringify({ error: err }));
         } else {
-          res.send(JSON.stringify({ message: "Event added to main calendar.", result }));
+          res.send(
+            JSON.stringify({ message: "Event added to main calendar.", result })
+          );
         }
       }
     );
@@ -93,7 +94,7 @@ app.post("/patch", (req, res) => {
 });
 
 app.post("/cancel", (req, res) => {
-  const { eventId, mainCalEventId } = req.body
+  const { eventId, mainCalEventId } = req.body;
   fs.readFile("credentials.json", (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     const { client_email, private_key } = JSON.parse(content);
@@ -101,13 +102,13 @@ app.post("/cancel", (req, res) => {
     const calendar = google.calendar({ version: "v3", auth: jwt });
     calendar.events.patch(
       {
-        calendarId: "2b0ajo6jvug90l1tspvunpiu8g@group.calendar.google.com",
+        calendarId: process.env.BOOKING_CALENDAR_ID,
         eventId: eventId,
         resource: {
-          summary: "Open"
+          summary: "Available"
         }
       },
-      (err) => {
+      err => {
         if (err) {
           res.send(JSON.stringify({ error: err }));
         }
@@ -115,7 +116,7 @@ app.post("/cancel", (req, res) => {
     );
     calendar.events.delete(
       {
-        calendarId: "mas.sinclair@gmail.com",
+        calendarId: process.env.MAIN_CALENDAR_ID,
         eventId: mainCalEventId
       },
       (err, result) => {
