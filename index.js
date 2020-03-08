@@ -15,18 +15,30 @@ app.use(cors());
 
 const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 
-app.get("/", (req, res) => {
+const setDay = date => {
+  date = new Date(date.getTime())
+  date.setDate(date.getDate() + ((4 + 7 - date.getDay()) % 7))
+  return date
+}
+
+app.post("/", (req, res) => {
+  let { week } = req.body
   fs.readFile("credentials.json", (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     const { client_email, private_key } = JSON.parse(content);
     const jwt = new google.auth.JWT(client_email, null, private_key, SCOPES);
     const calendar = google.calendar({ version: "v3", auth: jwt });
-    const events = [];
+    let events = [];
+    // console.log(week)
+    if(week === 0) {
+      week = setDay(new Date())
+    }
+    
     calendar.events.list(
       {
         calendarId: process.env.BOOKING_CALENDAR_ID,
-        timeMin: new Date().toISOString(),
-        maxResults: 50,
+        timeMin: week.toISOString(),
+        maxResults: 12,
         singleEvents: true,
         orderBy: "startTime"
       },
@@ -45,8 +57,6 @@ app.get("/", (req, res) => {
               });
             });
             res.send(JSON.stringify({ events: events }));
-          } else {
-            res.send(JSON.stringify({ message: "No upcoming events found." }));
           }
         }
       }
@@ -54,8 +64,37 @@ app.get("/", (req, res) => {
   });
 });
 
-app.post("/patch", (req, res) => {
-  const { eventId, title, resource } = req.body;
+app.post("/checkbusy", (req, res) => {
+  const { start, end, id } = req.body;
+  fs.readFile("credentials.json", (err, content) => {
+    if (err) return console.log("Error loading client secret file:", err);
+    const { client_email, private_key } = JSON.parse(content);
+    const jwt = new google.auth.JWT(client_email, null, private_key, SCOPES);
+    const calendar = google.calendar({ version: "v3", auth: jwt });
+
+    const check = {
+      auth: jwt,
+      resource: {
+        timeMin: start.dateTime,
+        timeMax: end.dateTime,
+        items: [{ id: [id] }]
+      }
+    };
+    calendar.freebusy.query(check, (err, response) => {
+      if (err) {
+        res.send(JSON.stringify({ error: err }));
+      } else {
+        const isBusy =
+          response.data.calendars[Object.keys(response.data.calendars)[0]].busy
+            .length;
+        res.send(JSON.stringify({ busyStatus: isBusy }));
+      }
+    });
+  });
+});
+
+app.post("/book", (req, res) => {
+  const { eventId, title, resource, calId } = req.body;
   fs.readFile("credentials.json", (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     const { client_email, private_key } = JSON.parse(content);
@@ -77,7 +116,7 @@ app.post("/patch", (req, res) => {
     );
     calendar.events.insert(
       {
-        calendarId: process.env.MAIN_CALENDAR_ID,
+        calendarId: calId,
         resource: resource
       },
       (err, result) => {
@@ -93,8 +132,35 @@ app.post("/patch", (req, res) => {
   });
 });
 
+app.post("/patch", (req, res) => {
+  const { eventId, title } = req.body;
+  fs.readFile("credentials.json", (err, content) => {
+    if (err) return console.log("Error loading client secret file:", err);
+    const { client_email, private_key } = JSON.parse(content);
+    const jwt = new google.auth.JWT(client_email, null, private_key, SCOPES);
+    const calendar = google.calendar({ version: "v3", auth: jwt });
+    calendar.events.patch(
+      {
+        calendarId: process.env.BOOKING_CALENDAR_ID,
+        eventId: eventId,
+        resource: {
+          summary: title
+        }
+      },
+      err,
+      result => {
+        if (err) {
+          res.send(JSON.stringify({ error: err }));
+        } else {
+          JSON.stringify({ message: "Event patched.", result });
+        }
+      }
+    );
+  });
+});
+
 app.post("/cancel", (req, res) => {
-  const { eventId, mainCalEventId } = req.body;
+  const { eventId, mainCalEventId, calId } = req.body;
   fs.readFile("credentials.json", (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     const { client_email, private_key } = JSON.parse(content);
@@ -116,7 +182,7 @@ app.post("/cancel", (req, res) => {
     );
     calendar.events.delete(
       {
-        calendarId: process.env.MAIN_CALENDAR_ID,
+        calendarId: calId,
         eventId: mainCalEventId
       },
       (err, result) => {
