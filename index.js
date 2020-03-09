@@ -29,10 +29,10 @@ app.post("/", (req, res) => {
     const jwt = new google.auth.JWT(client_email, null, private_key, SCOPES);
     const calendar = google.calendar({ version: "v3", auth: jwt });
     let events = [];
-    // console.log(week)
     if(week === 0) {
-      week = setDay(new Date())
+      week = new Date()
     }
+    week = new Date(week)
     
     calendar.events.list(
       {
@@ -57,6 +57,8 @@ app.post("/", (req, res) => {
               });
             });
             res.send(JSON.stringify({ events: events }));
+          } else {
+            res.send(JSON.stringify({ message: "No upcoming events."}))
           }
         }
       }
@@ -147,12 +149,11 @@ app.post("/patch", (req, res) => {
           summary: title
         }
       },
-      err,
-      result => {
+      (err, result) => {
         if (err) {
           res.send(JSON.stringify({ error: err }));
         } else {
-          JSON.stringify({ message: "Event patched.", result });
+          res.send(JSON.stringify({ message: "Event patched.", result }));
         }
       }
     );
