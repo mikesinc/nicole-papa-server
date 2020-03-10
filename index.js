@@ -16,24 +16,24 @@ app.use(cors());
 const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 
 const setDay = date => {
-  date = new Date(date.getTime())
-  date.setDate(date.getDate() + ((4 + 7 - date.getDay()) % 7))
-  return date
-}
+  date = new Date(date.getTime());
+  date.setDate(date.getDate() + ((4 + 7 - date.getDay()) % 7));
+  return date;
+};
 
 app.post("/", (req, res) => {
-  let { week } = req.body
+  let { week } = req.body;
   fs.readFile("credentials.json", (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     const { client_email, private_key } = JSON.parse(content);
     const jwt = new google.auth.JWT(client_email, null, private_key, SCOPES);
     const calendar = google.calendar({ version: "v3", auth: jwt });
     let events = [];
-    if(week === 0) {
-      week = new Date()
+    if (week === 0) {
+      week = new Date();
     }
-    week = new Date(week)
-    
+    week = new Date(week);
+
     calendar.events.list(
       {
         calendarId: process.env.BOOKING_CALENDAR_ID,
@@ -58,11 +58,48 @@ app.post("/", (req, res) => {
             });
             res.send(JSON.stringify({ events: events }));
           } else {
-            res.send(JSON.stringify({ message: "No upcoming events."}))
+            res.send(JSON.stringify({ message: "No upcoming events." }));
           }
         }
       }
     );
+  });
+});
+
+app.post("/checkbusybatch", (req, res) => {
+  const { events, id } = req.body;
+  fs.readFile("credentials.json", (err, content) => {
+    if (err) return console.log("Error loading client secret file:", err);
+    const { client_email, private_key } = JSON.parse(content);
+    const jwt = new google.auth.JWT(client_email, null, private_key, SCOPES);
+    const calendar = google.calendar({ version: "v3", auth: jwt });
+    let busyArray = [];
+
+    for (let i = 0; i < events.length; i++) {
+      const check = {
+        auth: jwt,
+        resource: {
+          timeMin: events[i].start,
+          timeMax: events[i].end,
+          items: [{ id: [id] }]
+        }
+      };
+      calendar.freebusy.query(check, (err, response) => {
+        if (err) {
+          res.send(JSON.stringify({ message: "busy check failed" }));
+        } else {
+          busyArray[i] = {
+            eventId: events[i].eventId,
+            busyStatus:
+              response.data.calendars[Object.keys(response.data.calendars)[0]]
+                .busy.length
+          };
+          if (Object.keys(busyArray).length === events.length) {
+            res.send(JSON.stringify({ busyArray: busyArray }));
+          }
+        }
+      });
+    }
   });
 });
 
