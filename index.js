@@ -23,7 +23,7 @@ const setDay = date => {
 
 app.post("/", (req, res) => {
   let { week } = req.body;
-  fs.readFile("credentials.json", (err, content) => {
+  fs.readFile(process.env.GOOGLE_APPLICATION_CREDENTIALS, (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     const { client_email, private_key } = JSON.parse(content);
     const jwt = new google.auth.JWT(client_email, null, private_key, SCOPES);
@@ -68,7 +68,7 @@ app.post("/", (req, res) => {
 
 app.post("/checkbusybatch", (req, res) => {
   const { events, id } = req.body;
-  fs.readFile("credentials.json", (err, content) => {
+  fs.readFile(process.env.GOOGLE_APPLICATION_CREDENTIALS, (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     const { client_email, private_key } = JSON.parse(content);
     const jwt = new google.auth.JWT(client_email, null, private_key, SCOPES);
@@ -105,7 +105,7 @@ app.post("/checkbusybatch", (req, res) => {
 
 app.post("/checkbusy", (req, res) => {
   const { start, end, id } = req.body;
-  fs.readFile("credentials.json", (err, content) => {
+  fs.readFile(process.env.GOOGLE_APPLICATION_CREDENTIALS, (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     const { client_email, private_key } = JSON.parse(content);
     const jwt = new google.auth.JWT(client_email, null, private_key, SCOPES);
@@ -134,7 +134,7 @@ app.post("/checkbusy", (req, res) => {
 
 app.post("/book", (req, res) => {
   const { eventId, title, resource, calId } = req.body;
-  fs.readFile("credentials.json", (err, content) => {
+  fs.readFile(process.env.GOOGLE_APPLICATION_CREDENTIALS, (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     const { client_email, private_key } = JSON.parse(content);
     const jwt = new google.auth.JWT(client_email, null, private_key, SCOPES);
@@ -173,7 +173,7 @@ app.post("/book", (req, res) => {
 
 app.post("/patch", (req, res) => {
   const { eventId, title } = req.body;
-  fs.readFile("credentials.json", (err, content) => {
+  fs.readFile(process.env.GOOGLE_APPLICATION_CREDENTIALS, (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     const { client_email, private_key } = JSON.parse(content);
     const jwt = new google.auth.JWT(client_email, null, private_key, SCOPES);
@@ -199,7 +199,7 @@ app.post("/patch", (req, res) => {
 
 app.post("/cancel", (req, res) => {
   const { eventId, mainCalEventId, calId } = req.body;
-  fs.readFile("credentials.json", (err, content) => {
+  fs.readFile(process.env.GOOGLE_APPLICATION_CREDENTIALS, (err, content) => {
     if (err) return console.log("Error loading client secret file:", err);
     const { client_email, private_key } = JSON.parse(content);
     const jwt = new google.auth.JWT(client_email, null, private_key, SCOPES);
