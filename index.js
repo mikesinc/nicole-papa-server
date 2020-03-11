@@ -15,13 +15,20 @@ app.use(cors());
 
 const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 
+const keysEnvVar = process.env['CREDS'];
+if (!keysEnvVar) {
+  throw new Error('The CREDS environment variable was not found!');
+}
+const keys = JSON.parse(keysEnvVar);
+
 app.post("/", (req, res) => {
   let { week } = req.body;
-  const { GOOGLE_CLIENT_EMAIL, GOOGLE_CLIENT_PRIVATE_KEY } = process.env;
+  const { client_email, private_key } = keys;
+  console.log(client_email, private_key)
   const jwt = new google.auth.JWT(
-    GOOGLE_CLIENT_EMAIL,
+    client_email,
     null,
-    GOOGLE_CLIENT_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    private_key,
     SCOPES
   );
   console.log(jwt)
@@ -65,11 +72,11 @@ app.post("/", (req, res) => {
 
 app.post("/checkbusybatch", (req, res) => {
   const { events, id } = req.body;
-  const { GOOGLE_CLIENT_EMAIL, GOOGLE_CLIENT_PRIVATE_KEY } = process.env;
+  const { client_email, private_key } = keys;
   const jwt = new google.auth.JWT(
-    GOOGLE_CLIENT_EMAIL,
+    client_email,
     null,
-    GOOGLE_CLIENT_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    private_key,
     SCOPES
   );
   const calendar = google.calendar({ version: "v3", auth: jwt });
@@ -104,11 +111,11 @@ app.post("/checkbusybatch", (req, res) => {
 
 app.post("/checkbusy", (req, res) => {
   const { start, end, id } = req.body;
-  const { GOOGLE_CLIENT_EMAIL, GOOGLE_CLIENT_PRIVATE_KEY } = process.env;
+  const { client_email, private_key } = keys;
   const jwt = new google.auth.JWT(
-    GOOGLE_CLIENT_EMAIL,
+    client_email,
     null,
-    GOOGLE_CLIENT_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    private_key,
     SCOPES
   );
   const calendar = google.calendar({ version: "v3", auth: jwt });
@@ -135,11 +142,11 @@ app.post("/checkbusy", (req, res) => {
 
 app.post("/book", (req, res) => {
   const { eventId, title, resource, calId } = req.body;
-  const { GOOGLE_CLIENT_EMAIL, GOOGLE_CLIENT_PRIVATE_KEY } = process.env;
+  const { client_email, private_key } = keys;
   const jwt = new google.auth.JWT(
-    GOOGLE_CLIENT_EMAIL,
+    client_email,
     null,
-    GOOGLE_CLIENT_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    private_key,
     SCOPES
   );
   const calendar = google.calendar({ version: "v3", auth: jwt });
@@ -176,11 +183,11 @@ app.post("/book", (req, res) => {
 
 app.post("/patch", (req, res) => {
   const { eventId, title } = req.body;
-  const { GOOGLE_CLIENT_EMAIL, GOOGLE_CLIENT_PRIVATE_KEY } = process.env;
+  const { client_email, private_key } = keys;
   const jwt = new google.auth.JWT(
-    GOOGLE_CLIENT_EMAIL,
+    client_email,
     null,
-    GOOGLE_CLIENT_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    private_key,
     SCOPES
   );
   const calendar = google.calendar({ version: "v3", auth: jwt });
@@ -204,11 +211,11 @@ app.post("/patch", (req, res) => {
 
 app.post("/cancel", (req, res) => {
   const { eventId, mainCalEventId, calId } = req.body;
-  const { GOOGLE_CLIENT_EMAIL, GOOGLE_CLIENT_PRIVATE_KEY } = process.env;
+  const { client_email, private_key } = keys;
   const jwt = new google.auth.JWT(
-    GOOGLE_CLIENT_EMAIL,
+    client_email,
     null,
-    GOOGLE_CLIENT_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    private_key,
     SCOPES
   );
   const calendar = google.calendar({ version: "v3", auth: jwt });
