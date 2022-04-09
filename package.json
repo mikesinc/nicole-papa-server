@@ -9,7 +9,7 @@
     "express": "^4.17.1",
     "googleapis": "^39.2.0",
     "ini": "^2.0.0",
-    "moment": "^2.24.0",
+    "moment": "^2.29.2",
     "node-forge": "^0.10.0",
     "nodemon": "^2.0.0"
   },
